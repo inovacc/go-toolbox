@@ -8,24 +8,18 @@ ARG HTTPS_PROXY=
 ENV http_proxy=${HTTP_PROXY}
 ENV https_proxy=${HTTPS_PROXY}
 
-# ---- pin versions ----
-ARG SQLC_VERSION=1.27.0
-ARG TASK_VERSION=3.39.2
-ARG GORELEASER_VERSION=2.6.1
 ARG PROTOC_VERSION=33.4
-ARG PROTOC_GEN_GO_VERSION=1.28.0
-ARG PROTOC_GEN_GO_GRPC_VERSION=1.2.0
 
 # Install build dependencies
 # hadolint ignore=DL3018
 RUN apk add --no-cache curl unzip
 
 # Install Go tools
-RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@v${SQLC_VERSION} \
- && go install github.com/go-task/task/v3/cmd/task@v${TASK_VERSION} \
- && go install github.com/goreleaser/goreleaser/v2@v${GORELEASER_VERSION} \
- && go install google.golang.org/protobuf/cmd/protoc-gen-go@v${PROTOC_GEN_GO_VERSION} \
- && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v${PROTOC_GEN_GO_GRPC_VERSION}
+RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest \
+ && go install github.com/go-task/task/v3/cmd/task@latest \
+ && go install github.com/goreleaser/goreleaser/v2@latest \
+ && go install google.golang.org/protobuf/cmd/protoc-gen-go@latest \
+ && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
 # Download and extract protoc
 RUN PROTOC_ZIP="protoc-${PROTOC_VERSION}-linux-x86_64.zip" \
