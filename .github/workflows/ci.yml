@@ -80,7 +80,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
@@ -104,6 +104,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: /tmp
+
+      - name: Load image and extract build tag
+        id: taggen
+        run: |
+          docker load -i /tmp/image.tar
+          BUILD_TAG=$(docker run --rm go-toolbox:test cat /etc/go-toolbox/BUILD_TAG)
+          echo "build_tag=${BUILD_TAG}" >> $GITHUB_OUTPUT
+          echo "Extracted BUILD_TAG: ${BUILD_TAG}"
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -114,6 +128,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest
+            type=raw,value=${{ steps.taggen.outputs.build_tag }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
