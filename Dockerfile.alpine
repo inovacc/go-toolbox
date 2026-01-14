@@ -17,6 +17,7 @@ ARG PROTOC_GEN_GO_VERSION=1.28.0
 ARG PROTOC_GEN_GO_GRPC_VERSION=1.2.0
 
 # Install build dependencies
+# hadolint ignore=DL3018
 RUN apk add --no-cache curl unzip
 
 # Install Go tools
@@ -47,6 +48,7 @@ ENV https_proxy=${HTTPS_PROXY}
 WORKDIR /workspace
 
 # Install only runtime dependencies
+# hadolint ignore=DL3018
 RUN apk add --no-cache git ca-certificates bash make
 
 # Copy compiled tools from builder
