@@ -24,6 +24,7 @@ RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@v${SQLC_VERSION} \
  && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v${PROTOC_GEN_GO_GRPC_VERSION}
 
 # Download and extract protoc
+# hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends curl unzip \
  && PROTOC_ZIP="protoc-${PROTOC_VERSION}-linux-x86_64.zip" \
  && curl -fL -o "${PROTOC_ZIP}" \
@@ -46,6 +47,7 @@ ENV https_proxy=${HTTPS_PROXY}
 WORKDIR /workspace
 
 # Install only runtime dependencies
+# hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git ca-certificates bash make \
  && rm -rf /var/lib/apt/lists/* \
