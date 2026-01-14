@@ -43,3 +43,6 @@ fabric.properties
 # Claude
 .claude/
 tmpclaude-*
+
+# Build metadata
+.build-metadata/

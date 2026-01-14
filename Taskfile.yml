@@ -1,5 +1,8 @@
 version: "3"
 
+vars:
+  GO_VERSION: "1.25"
+
 tasks:
   default:
     desc: Show available tasks
@@ -8,37 +11,108 @@ tasks:
 
   taggen:
     desc: Generate Docker image tag (go-version + random-name)
-    dir: scripts/taggen
     cmds:
-      - go run .
+      - ./scripts/taggen.sh
+
+  taggen:alpine:
+    desc: Generate Alpine tag
+    cmds:
+      - ./scripts/taggen.sh -A
+
+  taggen:debian:
+    desc: Generate Debian tag
+    cmds:
+      - ./scripts/taggen.sh -D
 
   taggen:name:
     desc: Generate only random name
-    dir: scripts/taggen
     cmds:
-      - go run . --name
+      - ./scripts/taggen.sh --name
 
-  taggen:version:
-    desc: Show Go version for tag
-    dir: scripts/taggen
-    cmds:
-      - go run . --version
-
-  docker:build:
-    desc: Build go-toolbox Docker image with generated tag
+  metadata:create:
+    desc: Create build metadata directory
     vars:
-      TAG:
-        sh: cd scripts/taggen && go run .
+      RANDOM_NAME:
+        sh: ./scripts/taggen.sh --name
     cmds:
-      - docker build -t ghcr.io/inovacc/go-toolbox:{{.TAG}} -t ghcr.io/inovacc/go-toolbox:latest .
+      - mkdir -p .build-metadata
+      - echo "{{.GO_VERSION}}D-{{.RANDOM_NAME}}" > .build-metadata/BUILD_TAG
+      - echo "{{.GO_VERSION}}" > .build-metadata/GO_VERSION
+      - echo "{{.RANDOM_NAME}}" > .build-metadata/BUILD_NAME
+      - echo "Created metadata with tag {{.GO_VERSION}}D-{{.RANDOM_NAME}}"
+
+  metadata:create:alpine:
+    desc: Create Alpine build metadata
+    vars:
+      RANDOM_NAME:
+        sh: ./scripts/taggen.sh --name
+    cmds:
+      - mkdir -p .build-metadata
+      - echo "{{.GO_VERSION}}A-{{.RANDOM_NAME}}" > .build-metadata/BUILD_TAG
+      - echo "{{.GO_VERSION}}" > .build-metadata/GO_VERSION
+      - echo "{{.RANDOM_NAME}}" > .build-metadata/BUILD_NAME
+      - echo "Created metadata with tag {{.GO_VERSION}}A-{{.RANDOM_NAME}}"
+
+  docker:build:debian:
+    desc: Build Debian image with generated tag
+    vars:
+      RANDOM_NAME:
+        sh: ./scripts/taggen.sh --name
+      TAG: "{{.GO_VERSION}}D-{{.RANDOM_NAME}}"
+    cmds:
+      - mkdir -p .build-metadata
+      - echo "{{.TAG}}" > .build-metadata/BUILD_TAG
+      - echo "{{.GO_VERSION}}" > .build-metadata/GO_VERSION
+      - echo "{{.RANDOM_NAME}}" > .build-metadata/BUILD_NAME
+      - docker build -f Dockerfile.debian -t ghcr.io/inovacc/go-toolbox:{{.TAG}} -t ghcr.io/inovacc/go-toolbox:debian .
       - echo "Built ghcr.io/inovacc/go-toolbox:{{.TAG}}"
 
-  docker:build:local:
-    desc: Build go-toolbox Docker image with local tag
+  docker:build:alpine:
+    desc: Build Alpine image with generated tag
+    vars:
+      RANDOM_NAME:
+        sh: ./scripts/taggen.sh --name
+      TAG: "{{.GO_VERSION}}A-{{.RANDOM_NAME}}"
     cmds:
-      - docker build -t go-toolbox:local .
+      - mkdir -p .build-metadata
+      - echo "{{.TAG}}" > .build-metadata/BUILD_TAG
+      - echo "{{.GO_VERSION}}" > .build-metadata/GO_VERSION
+      - echo "{{.RANDOM_NAME}}" > .build-metadata/BUILD_NAME
+      - docker build -f Dockerfile.alpine -t ghcr.io/inovacc/go-toolbox:{{.TAG}} -t ghcr.io/inovacc/go-toolbox:alpine .
+      - echo "Built ghcr.io/inovacc/go-toolbox:{{.TAG}}"
 
-  docker:test:
-    desc: Test go-toolbox image tools
+  docker:build:both:
+    desc: Build both Alpine and Debian with same random name
+    vars:
+      RANDOM_NAME:
+        sh: ./scripts/taggen.sh --name
+      TAG_ALPINE: "{{.GO_VERSION}}A-{{.RANDOM_NAME}}"
+      TAG_DEBIAN: "{{.GO_VERSION}}D-{{.RANDOM_NAME}}"
     cmds:
-      - docker run --rm go-toolbox:local
+      # Build Debian
+      - mkdir -p .build-metadata
+      - echo "{{.TAG_DEBIAN}}" > .build-metadata/BUILD_TAG
+      - echo "{{.GO_VERSION}}" > .build-metadata/GO_VERSION
+      - echo "{{.RANDOM_NAME}}" > .build-metadata/BUILD_NAME
+      - docker build -f Dockerfile.debian -t ghcr.io/inovacc/go-toolbox:{{.TAG_DEBIAN}} -t ghcr.io/inovacc/go-toolbox:debian .
+      # Build Alpine
+      - echo "{{.TAG_ALPINE}}" > .build-metadata/BUILD_TAG
+      - docker build -f Dockerfile.alpine -t ghcr.io/inovacc/go-toolbox:{{.TAG_ALPINE}} -t ghcr.io/inovacc/go-toolbox:alpine .
+      - echo "Built images:"
+      - echo "  Debian: {{.TAG_DEBIAN}}"
+      - echo "  Alpine: {{.TAG_ALPINE}}"
+
+  docker:test:debian:
+    desc: Test Debian image
+    cmds:
+      - docker run --rm ghcr.io/inovacc/go-toolbox:debian
+
+  docker:test:alpine:
+    desc: Test Alpine image
+    cmds:
+      - docker run --rm ghcr.io/inovacc/go-toolbox:alpine
+
+  clean:
+    desc: Clean build metadata
+    cmds:
+      - rm -rf .build-metadata

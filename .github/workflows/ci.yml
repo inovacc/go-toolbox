@@ -9,84 +9,163 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  GO_VERSION: "1.25"
 
 jobs:
+  taggen:
+    runs-on: ubuntu-latest
+    outputs:
+      random_name: ${{ steps.generate.outputs.random_name }}
+      tag_alpine: ${{ steps.generate.outputs.tag_alpine }}
+      tag_debian: ${{ steps.generate.outputs.tag_debian }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate build tags
+        id: generate
+        run: |
+          chmod +x ./scripts/taggen.sh
+          RANDOM_NAME=$(./scripts/taggen.sh --name)
+          TAG_ALPINE="${GO_VERSION}A-${RANDOM_NAME}"
+          TAG_DEBIAN="${GO_VERSION}D-${RANDOM_NAME}"
+
+          echo "random_name=${RANDOM_NAME}" >> $GITHUB_OUTPUT
+          echo "tag_alpine=${TAG_ALPINE}" >> $GITHUB_OUTPUT
+          echo "tag_debian=${TAG_DEBIAN}" >> $GITHUB_OUTPUT
+
+          echo "Generated tags:"
+          echo "  Alpine: ${TAG_ALPINE}"
+          echo "  Debian: ${TAG_DEBIAN}"
+
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Lint Dockerfile
+      - name: Lint Dockerfiles
         uses: hadolint/hadolint-action@v3.1.0
         with:
-          dockerfile: Dockerfile
+          dockerfile: Dockerfile.debian
 
-  build:
+      - name: Lint Alpine Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile.alpine
+
+  build-debian:
     runs-on: ubuntu-latest
+    needs: taggen
     steps:
       - uses: actions/checkout@v4
 
+      - name: Create build metadata
+        run: |
+          mkdir -p .build-metadata
+          echo "${{ needs.taggen.outputs.tag_debian }}" > .build-metadata/BUILD_TAG
+          echo "${GO_VERSION}" > .build-metadata/GO_VERSION
+          echo "${{ needs.taggen.outputs.random_name }}" > .build-metadata/BUILD_NAME
+
       - uses: docker/setup-buildx-action@v3
 
-      - name: Build image
+      - name: Build Debian image
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: Dockerfile.debian
           push: false
           load: true
-          tags: go-toolbox:test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: go-toolbox:debian
+          cache-from: type=gha,scope=debian
+          cache-to: type=gha,mode=max,scope=debian
 
       - name: Verify tools
-        run: |
-          docker run --rm go-toolbox:test
+        run: docker run --rm go-toolbox:debian
 
-      - name: Save image for security scan
-        run: docker save go-toolbox:test -o /tmp/image.tar
+      - name: Save image
+        run: docker save go-toolbox:debian -o /tmp/image-debian.tar
 
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         with:
-          name: docker-image
-          path: /tmp/image.tar
+          name: docker-image-debian
+          path: /tmp/image-debian.tar
+          retention-days: 1
+
+  build-alpine:
+    runs-on: ubuntu-latest
+    needs: taggen
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create build metadata
+        run: |
+          mkdir -p .build-metadata
+          echo "${{ needs.taggen.outputs.tag_alpine }}" > .build-metadata/BUILD_TAG
+          echo "${GO_VERSION}" > .build-metadata/GO_VERSION
+          echo "${{ needs.taggen.outputs.random_name }}" > .build-metadata/BUILD_NAME
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build Alpine image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.alpine
+          push: false
+          load: true
+          tags: go-toolbox:alpine
+          cache-from: type=gha,scope=alpine
+          cache-to: type=gha,mode=max,scope=alpine
+
+      - name: Verify tools
+        run: docker run --rm go-toolbox:alpine
+
+      - name: Save image
+        run: docker save go-toolbox:alpine -o /tmp/image-alpine.tar
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-alpine
+          path: /tmp/image-alpine.tar
           retention-days: 1
 
   security:
     runs-on: ubuntu-latest
-    needs: [lint, build]
+    needs: [lint, build-debian, build-alpine]
     permissions:
       contents: read
       security-events: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download image artifact
+      - name: Download Debian image
         uses: actions/download-artifact@v4
         with:
-          name: docker-image
+          name: docker-image-debian
           path: /tmp
 
-      - name: Load image
-        run: docker load -i /tmp/image.tar
+      - name: Load Debian image
+        run: docker load -i /tmp/image-debian.tar
 
-      - name: Run Trivy vulnerability scanner
+      - name: Scan Debian image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'go-toolbox:test'
+          image-ref: 'go-toolbox:debian'
           format: 'sarif'
-          output: 'trivy-results.sarif'
+          output: 'trivy-debian.sarif'
           severity: 'CRITICAL,HIGH'
 
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
+      - name: Upload Debian scan results
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: 'trivy-debian.sarif'
+          category: 'debian'
 
   release:
     runs-on: ubuntu-latest
-    needs: [build, security]
+    needs: [taggen, build-debian, build-alpine, security]
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: read
@@ -99,36 +178,49 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Download image artifact
+      - name: Download Debian image
         uses: actions/download-artifact@v4
         with:
-          name: docker-image
+          name: docker-image-debian
           path: /tmp
 
-      - name: Load image and extract build tag
-        id: taggen
-        run: |
-          docker load -i /tmp/image.tar
-          BUILD_TAG=$(docker run --rm go-toolbox:test cat /etc/go-toolbox/BUILD_TAG)
-          echo "build_tag=${BUILD_TAG}" >> $GITHUB_OUTPUT
-          echo "Extracted BUILD_TAG: ${BUILD_TAG}"
+      - name: Download Alpine image
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image-alpine
+          path: /tmp
 
-      - name: Tag and push image
+      - name: Load images
+        run: |
+          docker load -i /tmp/image-debian.tar
+          docker load -i /tmp/image-alpine.tar
+
+      - name: Tag and push images
         env:
           VERSION: ${{ github.ref_name }}
+          TAG_ALPINE: ${{ needs.taggen.outputs.tag_alpine }}
+          TAG_DEBIAN: ${{ needs.taggen.outputs.tag_debian }}
         run: |
-          # Remove 'v' prefix from version
           SEMVER=${VERSION#v}
-          BUILD_TAG=${{ steps.taggen.outputs.build_tag }}
 
-          # Tag image with all required tags
-          docker tag go-toolbox:test ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${SEMVER}
-          docker tag go-toolbox:test ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          docker tag go-toolbox:test ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BUILD_TAG}
+          # Tag Debian images
+          docker tag go-toolbox:debian ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${SEMVER}
+          docker tag go-toolbox:debian ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker tag go-toolbox:debian ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:debian
+          docker tag go-toolbox:debian ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${TAG_DEBIAN}
+
+          # Tag Alpine images
+          docker tag go-toolbox:alpine ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:alpine
+          docker tag go-toolbox:alpine ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${TAG_ALPINE}
 
           # Push all tags
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${SEMVER}
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BUILD_TAG}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:debian
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${TAG_DEBIAN}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:alpine
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${TAG_ALPINE}
 
-          echo "Pushed tags: ${SEMVER}, latest, ${BUILD_TAG}"
+          echo "Pushed tags:"
+          echo "  Debian: ${SEMVER}, latest, debian, ${TAG_DEBIAN}"
+          echo "  Alpine: alpine, ${TAG_ALPINE}"

@@ -71,24 +71,40 @@ func getGoVersion() string {
 func main() {
 	goVersion := getGoVersion()
 	randomName := generateName()
-	tag := fmt.Sprintf("%s-%s", goVersion, randomName)
+	flavor := ""
 
-	if len(os.Args) > 1 {
-		switch os.Args[1] {
+	// Parse arguments
+	for i := 1; i < len(os.Args); i++ {
+		arg := os.Args[i]
+		switch arg {
 		case "--name":
 			fmt.Println(randomName)
 			return
 		case "--version":
 			fmt.Println(goVersion)
 			return
+		case "--alpine", "-A":
+			flavor = "A"
+		case "--debian", "-D":
+			flavor = "D"
 		case "--help", "-h":
-			fmt.Println("Usage: taggen [--name|--version|--help]")
-			fmt.Println("  (no args)  Print full tag: <go-version>-<random-name>")
-			fmt.Println("  --name     Print only random name")
-			fmt.Println("  --version  Print only Go version")
+			fmt.Println("Usage: taggen [OPTIONS]")
+			fmt.Println()
+			fmt.Println("Options:")
+			fmt.Println("  (no args)    Print full tag: <go-version>-<random-name>")
+			fmt.Println("  --alpine, -A Print tag with Alpine suffix: <go-version>A-<random-name>")
+			fmt.Println("  --debian, -D Print tag with Debian suffix: <go-version>D-<random-name>")
+			fmt.Println("  --name       Print only random name")
+			fmt.Println("  --version    Print only Go version")
+			fmt.Println()
+			fmt.Println("Examples:")
+			fmt.Println("  taggen           # 1.25-mighty-wolf")
+			fmt.Println("  taggen -A        # 1.25A-mighty-wolf")
+			fmt.Println("  taggen -D        # 1.25D-mighty-wolf")
 			return
 		}
 	}
 
+	tag := fmt.Sprintf("%s%s-%s", goVersion, flavor, randomName)
 	fmt.Println(tag)
 }
