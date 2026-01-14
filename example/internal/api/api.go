@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -29,7 +30,7 @@ type MessageResponse struct {
 	Message string `json:"message"`
 }
 
-func Handler(_ *cobra.Command, _ []string) error {
+func Server(_ *cobra.Command, _ []string) error {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
@@ -72,6 +73,8 @@ func healthHandler(w http.ResponseWriter, _ *http.Request) {
 		GoVersion: runtime.Version(),
 		Uptime:    time.Since(startTime).Round(time.Second).String(),
 	}
+
+	slog.Info("health handler")
 	writeJSON(w, http.StatusOK, resp)
 }
 
@@ -79,6 +82,8 @@ func rootHandler(w http.ResponseWriter, _ *http.Request) {
 	resp := MessageResponse{
 		Message: "Go Toolbox Example API",
 	}
+
+	slog.Info("root handler")
 	writeJSON(w, http.StatusOK, resp)
 }
 
@@ -86,20 +91,30 @@ func helloHandler(w http.ResponseWriter, _ *http.Request) {
 	resp := MessageResponse{
 		Message: "Hello, World!",
 	}
+
+	slog.Info("hello handler")
 	writeJSON(w, http.StatusOK, resp)
 }
 
 func helloNameHandler(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name")
-	resp := MessageResponse{
-		Message: "Hello, " + name + "!",
+	if name == "" {
+		writeJSON(w, http.StatusBadRequest, MessageResponse{Message: "name parameter is required"})
+		return
 	}
+
+	resp := MessageResponse{
+		Message: fmt.Sprintf("Hello, %s!", name),
+	}
+
+	slog.Info("hello name handler", "name", name)
 	writeJSON(w, http.StatusOK, resp)
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
+
 	if err := json.NewEncoder(w).Encode(data); err != nil {
 		slog.Error("failed to encode response", "error", err)
 	}
