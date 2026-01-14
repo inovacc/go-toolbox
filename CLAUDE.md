@@ -104,3 +104,22 @@ Projects using this toolbox typically define these tasks:
 - `GIT_TERMINAL_PROMPT` - Set to `0` to disable git credential prompts
 - `GH_PAT` - GitHub Personal Access Token for private repo access
 - `GITHUB_OWNER` - Organization/owner for GoReleaser builds
+
+## CI/CD Pipeline
+
+### Triggers
+- **Tags (`v*`)**: Build and push to GHCR with SemVer tags
+- **Pull Requests**: Build and validate without pushing
+
+### Release Process
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+### Generated Tags
+When pushing `v1.0.0`, the following image tags are created:
+- `ghcr.io/<owner>/go-toolbox:1.0.0`
+- `ghcr.io/<owner>/go-toolbox:1.0`
+- `ghcr.io/<owner>/go-toolbox:1`
+- `ghcr.io/<owner>/go-toolbox:latest`
