@@ -9,7 +9,7 @@ Example projects demonstrating how to use Mjolnir for building production-grade 
 | **Go** | Web API with GoReleaser + Distroless | [examples/go](./go/) |
 | **Rust** | Web API with Actix-web + Distroless | [examples/rust](./rust/) |
 | **TypeScript** | Web API with Bun + Distroless | [examples/typescript](./typescript/) |
-| **Python** | Coming soon | - |
+| **Python** | Web API with FastAPI + Slim | [examples/python](./python/) |
 
 ## Quick Start
 
