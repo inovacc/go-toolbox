@@ -42,17 +42,11 @@ ENV https_proxy=${HTTPS_PROXY}
 WORKDIR /workspace
 
 # Install runtime dependencies and additional tools
-# hadolint ignore=DL3018
+# hadolint ignore=DL3018,DL3016,DL4006
 RUN apk add --no-cache git ca-certificates bash make curl unzip \
-    nodejs npm python3 gcc musl-dev
-
-# Install pnpm via npm (corepack not available in Alpine nodejs)
-# hadolint ignore=DL3016
-RUN npm install -g pnpm
-
-# Install bun
-# hadolint ignore=DL4006
-RUN curl -fsSL https://bun.sh/install | bash \
+    nodejs npm python3 gcc musl-dev \
+ && npm install -g pnpm \
+ && curl -fsSL https://bun.sh/install | bash \
  && mv /root/.bun/bin/bun /usr/local/bin/bun \
  && rm -rf /root/.bun
 

@@ -40,19 +40,14 @@ ENV https_proxy=${HTTPS_PROXY}
 WORKDIR /workspace
 
 # Install runtime dependencies and additional tools
-# hadolint ignore=DL3008
+# hadolint ignore=DL3008,DL4006
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git ca-certificates bash make curl unzip \
     nodejs npm python3 gcc \
  && rm -rf /var/lib/apt/lists/* \
- && rm -rf /var/cache/apt/*
-
-# Install pnpm via corepack
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-# Install bun
-# hadolint ignore=DL4006
-RUN curl -fsSL https://bun.sh/install | bash \
+ && rm -rf /var/cache/apt/* \
+ && corepack enable && corepack prepare pnpm@latest --activate \
+ && curl -fsSL https://bun.sh/install | bash \
  && mv /root/.bun/bin/bun /usr/local/bin/bun \
  && rm -rf /root/.bun
 
