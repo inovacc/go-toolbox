@@ -41,9 +41,18 @@ ENV https_proxy=${HTTPS_PROXY}
 
 WORKDIR /workspace
 
-# Install only runtime dependencies
+# Install runtime dependencies and additional tools
 # hadolint ignore=DL3018
-RUN apk add --no-cache git ca-certificates bash make
+RUN apk add --no-cache git ca-certificates bash make curl unzip \
+    nodejs npm python3 gcc musl-dev
+
+# Install pnpm via corepack
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Install bun
+RUN curl -fsSL https://bun.sh/install | bash \
+ && mv /root/.bun/bin/bun /usr/local/bin/bun \
+ && rm -rf /root/.bun
 
 # Copy compiled tools from builder
 COPY --from=builder /go/bin/* /go/bin/
@@ -64,4 +73,4 @@ LABEL org.opencontainers.image.title="go-toolbox" \
       org.opencontainers.image.vendor="inovacc"
 
 # Verify tools
-CMD ["sh", "-c", "echo \"Build: $(cat /etc/go-toolbox/BUILD_TAG)\" && go version && task --version && sqlc version && goreleaser --version && protoc --version && protoc-gen-go --version && protoc-gen-go-grpc --version"]
+CMD ["sh", "-c", "echo \"Build: $(cat /etc/go-toolbox/BUILD_TAG)\" && go version && task --version && sqlc version && goreleaser --version && protoc --version && protoc-gen-go --version && protoc-gen-go-grpc --version && node --version && pnpm --version && bun --version && python3 --version && gcc --version | head -1"]
