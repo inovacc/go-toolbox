@@ -45,7 +45,7 @@ WORKDIR /workspace
 # hadolint ignore=DL3018,DL3016,DL4006
 RUN apk add --no-cache git ca-certificates bash make curl unzip \
     nodejs npm python3 py3-pip gcc musl-dev docker-cli \
- && npm install -g pnpm typescript \
+ && npm install -g pnpm typescript@5.9.3 \
  && curl -fsSL https://bun.sh/install | bash \
  && mv /root/.bun/bin/bun /usr/local/bin/bun \
  && rm -rf /root/.bun \

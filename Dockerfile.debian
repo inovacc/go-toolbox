@@ -47,7 +47,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/* \
  && rm -rf /var/cache/apt/* \
  && corepack enable && corepack prepare pnpm@latest --activate \
- && npm install -g typescript \
+ && npm install -g typescript@5.9.3 \
  && curl -fsSL https://bun.sh/install | bash \
  && mv /root/.bun/bin/bun /usr/local/bin/bun \
  && rm -rf /root/.bun \
