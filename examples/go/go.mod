@@ -1,4 +1,4 @@
-module github.com/inovacc/go-toolbox/example
+module github.com/inovacc/mjolnir/examples/go
 
 go 1.25
 

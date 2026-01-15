@@ -1,18 +1,16 @@
-# Mjolnir Example API
+# Mjolnir Example API - Rust
 
-A minimal Go web API demonstrating how to use [mjolnir](https://github.com/inovacc/mjolnir) for building production-grade Docker images.
+A minimal Rust web API demonstrating how to use [Mjolnir](https://github.com/inovacc/mjolnir) for building production-grade Docker images.
 
 ## Project Structure
 
 ```
-example/
-├── main.go              # Application entrypoint
-├── cmd/root.go          # Cobra CLI root command
-├── internal/api/api.go  # HTTP server and handlers
-├── Dockerfile           # Multi-stage build (mjolnir + distroless)
+rust/
+├── src/main.rs          # Application entrypoint
+├── Cargo.toml           # Rust dependencies
+├── Dockerfile           # Multi-stage build (Mjolnir + distroless)
 ├── Taskfile.yml         # Build automation
-├── .goreleaser.yml      # Release configuration
-└── go.mod
+└── README.md
 ```
 
 ## API Endpoints
@@ -49,11 +47,7 @@ curl http://localhost:8080/api/hello/World
 ### Build Binary Only
 
 ```bash
-# Development build (current platform)
-task build:dev
-
-# Production build (Linux amd64/arm64)
-task build:prod
+task build
 ```
 
 ## Using in GitHub Actions
@@ -66,14 +60,14 @@ jobs:
       image: ghcr.io/inovacc/mjolnir:latest
     steps:
       - uses: actions/checkout@v4
-      - run: task build:prod
+      - run: cargo build --release
 ```
 
 ## Docker Image Details
 
 The Dockerfile uses a multi-stage build:
 
-1. **Builder stage**: Uses `ghcr.io/inovacc/mjolnir` with GoReleaser
-2. **Production stage**: Uses `gcr.io/distroless/static-debian12:nonroot`
+1. **Builder stage**: Uses `ghcr.io/inovacc/mjolnir` with Rust toolchain
+2. **Production stage**: Uses `gcr.io/distroless/cc-debian12:nonroot`
 
-Final image size: ~5MB
+Final image size: ~15MB

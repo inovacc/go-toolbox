@@ -1,0 +1,37 @@
+version: "3"
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  build:
+    desc: Build release binary
+    cmds:
+      - cargo build --release
+
+  run:
+    desc: Run the API locally
+    cmds:
+      - cargo run
+
+  test:
+    desc: Run tests
+    cmds:
+      - cargo test
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - cargo clean
+
+  docker:build:
+    desc: Build Docker image
+    cmds:
+      - docker build -t mjolnir-example-rust .
+
+  docker:run:
+    desc: Run Docker container
+    cmds:
+      - docker run --rm -p 8080:8080 mjolnir-example-rust
