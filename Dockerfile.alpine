@@ -46,8 +46,9 @@ WORKDIR /workspace
 RUN apk add --no-cache git ca-certificates bash make curl unzip \
     nodejs npm python3 gcc musl-dev
 
-# Install pnpm via corepack
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install pnpm via npm (corepack not available in Alpine nodejs)
+# hadolint ignore=DL3016
+RUN npm install -g pnpm
 
 # Install bun
 # hadolint ignore=DL4006
