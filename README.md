@@ -77,11 +77,11 @@ Images use semantic tags with Go version, flavor suffix, and random identifier:
 |-----------|--------|--------|---------|
 | Go version | `1.25` | `1.25` | Go toolchain version |
 | Flavor | `A` | `D` | Alpine or Debian |
-| Random name | `proud-panther` | `proud-panther` | Build identifier |
+| Random name | `gentle-panda` | `gentle-panda` | Build identifier |
 
 **Examples:**
-- Alpine: `ghcr.io/inovacc/go-toolbox:1.25A-proud-panther`
-- Debian: `ghcr.io/inovacc/go-toolbox:1.25D-proud-panther`
+- Alpine: `ghcr.io/inovacc/go-toolbox:1.25A-gentle-panda`
+- Debian: `ghcr.io/inovacc/go-toolbox:1.25D-gentle-panda`
 
 ### Available Tags
 
