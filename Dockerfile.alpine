@@ -69,6 +69,8 @@ COPY --from=builder /usr/local/include/google /usr/local/include/google
 
 # Generate build metadata
 ARG BUILD_VERSION=dev
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+# hadolint ignore=SC3028,SC3054
 RUN mkdir -p /etc/mjolnir && \
     FIGURES=(thor odin freya loki heimdall zeus athena apollo mars venus ra anubis phoenix griffin) && \
     REALMS=(asgard valhalla olympus thunder storm forge fire wisdom valor eternal divine) && \
