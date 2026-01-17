@@ -161,19 +161,24 @@ jobs:
           VERSION: ${{ github.ref_name }}
         run: |
           SEMVER=${VERSION#v}
+          IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-          # Tag Debian images
-          docker tag go-toolbox:debian ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${SEMVER}
-          docker tag go-toolbox:debian ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          docker tag go-toolbox:debian ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:debian
+          # Tag Debian images (default)
+          docker tag go-toolbox:debian ${IMAGE}:${SEMVER}
+          docker tag go-toolbox:debian ${IMAGE}:${SEMVER}-debian
+          docker tag go-toolbox:debian ${IMAGE}:latest
 
           # Tag Alpine images
-          docker tag go-toolbox:alpine ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:alpine
+          docker tag go-toolbox:alpine ${IMAGE}:${SEMVER}-alpine
+          docker tag go-toolbox:alpine ${IMAGE}:latest-alpine
 
           # Push all tags
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${SEMVER}
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:debian
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:alpine
+          docker push ${IMAGE}:${SEMVER}
+          docker push ${IMAGE}:${SEMVER}-debian
+          docker push ${IMAGE}:${SEMVER}-alpine
+          docker push ${IMAGE}:latest
+          docker push ${IMAGE}:latest-alpine
 
-          echo "Pushed tags: ${SEMVER}, latest, debian, alpine"
+          echo "Pushed tags:"
+          echo "  ${SEMVER}, ${SEMVER}-debian, ${SEMVER}-alpine"
+          echo "  latest, latest-alpine"

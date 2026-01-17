@@ -37,12 +37,11 @@ jobs:
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:debian
           cache-from: type=gha,scope=debian
           cache-to: type=gha,mode=max,scope=debian
 
       - name: Verify Debian image
-        run: docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:debian
+        run: docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
   build-and-push-alpine:
     runs-on: ubuntu-latest
@@ -68,9 +67,9 @@ jobs:
           file: Dockerfile.alpine
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:alpine
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-alpine
           cache-from: type=gha,scope=alpine
           cache-to: type=gha,mode=max,scope=alpine
 
       - name: Verify Alpine image
-        run: docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:alpine
+        run: docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-alpine
