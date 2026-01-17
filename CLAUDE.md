@@ -4,134 +4,156 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a GitHub Actions job-container image (Go Toolbox Builder) for building production-grade Go binaries and distroless container images. It is NOT a Go application itself - it's infrastructure tooling.
+**Mjolnir** - "The hammer for every build"
 
-## Architecture
+A multi-language CI container image for building production-grade applications. Provides Go, Rust, Node.js, Python, and essential build tools in a single image.
 
-This repository provides the **Toolbox Image** (`Dockerfile`) - Based on `golang:1.25`, used as a GitHub Actions job container to run GoReleaser builds via `task build:prod`.
+Repository: `ghcr.io/inovacc/mjolnir`
 
-### CI Flow
+## Image Variants
+
+| Variant | Base | Use Case |
+|---------|------|----------|
+| **Debian** (default) | `golang:1.25` | Full-featured, wider compatibility |
+| **Alpine** | `golang:1.25-alpine` | Smaller image, musl libc |
+
+## Tagging Scheme
+
 ```
-lint → build → security → release
-  │      │        │          │
-  │      │        │          └── Push to GHCR (tags only)
-  │      │        └── Trivy vulnerability scan
-  │      └── Build & verify tools
-  └── Hadolint Dockerfile check
-```
-
-## Usage Context
-
-This image is consumed by other repositories in their GitHub Actions workflows:
-
-```yaml
-container:
-  image: ghcr.io/<org>/go-toolbox:1.0.0
-
-steps:
-  - run: task build:prod
+ghcr.io/inovacc/mjolnir:1.6.8          # Default (Debian)
+ghcr.io/inovacc/mjolnir:1.6.8-debian   # Explicit Debian
+ghcr.io/inovacc/mjolnir:1.6.8-alpine   # Alpine variant
+ghcr.io/inovacc/mjolnir:latest         # Latest Debian
+ghcr.io/inovacc/mjolnir:latest-alpine  # Latest Alpine
 ```
 
-## Taskfile Commands
+## Included Tools
 
-Projects using this toolbox typically define these tasks:
-
-| Task | Description |
+### Languages & Runtimes
+| Tool | Description |
 |------|-------------|
-| `build:dev` | Build development snapshot with GoReleaser |
-| `build:prod` | Build production snapshot with GoReleaser |
-| `release` | Create production release (requires git tag) |
-| `release:snapshot` | Create snapshot release (no tag required) |
-| `release:check` | Validate GoReleaser configuration |
+| Go 1.25 | Go compiler and tools |
+| Rust (stable) | rustc, cargo |
+| Node.js | Node.js runtime |
+| Python 3 | Python interpreter |
+| Bun | Fast JavaScript runtime |
 
-## Toolbox Dockerfile Dependencies
+### Package Managers
+| Tool | Description |
+|------|-------------|
+| npm | Node.js package manager |
+| npx | npm package runner |
+| pnpm | Fast, disk space efficient package manager |
+| pip3 | Python package manager |
+| cargo | Rust package manager |
 
-### Base Image
-- `golang:1.25` - Official Go image with full toolchain
+### Build Tools
+| Tool | Description |
+|------|-------------|
+| Task | Task runner (Taskfile.yml) |
+| Make | Build automation |
+| GCC | C compiler |
+| GoReleaser | Go release automation |
+| tsc | TypeScript compiler |
 
-### System Packages
-- `git` - Version control
-- `ca-certificates` - SSL/TLS certificates
-- `curl` - HTTP client for downloads
-- `unzip` - Archive extraction
-- `bash` - Shell
-- `make` - Build automation
+### Code Generation
+| Tool | Description |
+|------|-------------|
+| sqlc | Type-safe SQL code generator |
+| protoc | Protocol Buffer compiler |
+| protoc-gen-go | Go protobuf generator |
+| protoc-gen-go-grpc | Go gRPC generator |
 
-### Go Tools (version-pinned)
-| Tool | Version | Purpose |
-|------|---------|---------|
-| `task` | 3.39.2 | Task runner - executes build tasks |
-| `goreleaser` | 2.6.1 | Release automation for Go projects |
-| `sqlc` | 1.27.0 | Type-safe SQL code generator |
-| `protoc-gen-go` | 1.28.0 | Protocol Buffer Go code generator |
-| `protoc-gen-go-grpc` | 1.2.0 | gRPC Go code generator |
+### Containers & Linting
+| Tool | Description |
+|------|-------------|
+| Docker CLI | Docker command-line tool |
+| hadolint | Dockerfile linter |
 
-### Binary Tools
-| Tool | Version | Purpose |
-|------|---------|---------|
-| `protoc` | 33.4 | Protocol Buffer compiler |
+### Data Processing
+| Tool | Description |
+|------|-------------|
+| jq | JSON processor |
+| yq | YAML processor |
 
-### Build Args
-- `HTTP_PROXY` / `HTTPS_PROXY` - Proxy support for corporate environments
-- `TASK_VERSION` - Task runner version
-- `GORELEASER_VERSION` - GoReleaser version
-- `SQLC_VERSION` - SQLC version
-- `PROTOC_VERSION` - Protocol Buffer compiler version
-- `PROTOC_GEN_GO_VERSION` - protoc-gen-go version
-- `PROTOC_GEN_GO_GRPC_VERSION` - protoc-gen-go-grpc version
+### Utilities
+| Tool | Description |
+|------|-------------|
+| git | Version control |
+| curl | HTTP client |
+| unzip | Archive extraction |
+| bash | Shell |
 
-### Build Requirements
-- CGO disabled (`CGO_ENABLED=0`) for static binaries
-- Linux target (`GOOS=linux`, `GOARCH=amd64`)
-- Git credentials configured at runtime for private modules
+## Build Metadata
 
-### Distroless Runtime Image
-- `gcr.io/distroless/static-debian13:nonroot` - Minimal base with SSL certificates
-- Runs as `nonroot:nonroot` user
-- No shell, no package manager
+Each image generates mythology-themed build metadata at `/etc/mjolnir/`:
 
-## Key Files
-
-- `Dockerfile` - Toolbox builder image definition (multi-stage)
-- `.github/workflows/ci.yml` - CI pipeline with lint, build, security, release
-- `.dockerignore` - Excludes unnecessary files from build context
-
-## Environment Variables (when used in workflows)
-
-- `GOPRIVATE` - For private Go modules (e.g., `github.com/<ORG>/*`)
-- `GONOSUMDB` - Skip checksum for private modules
-- `GIT_TERMINAL_PROMPT` - Set to `0` to disable git credential prompts
-- `GH_PAT` - GitHub Personal Access Token for private repo access
-- `GITHUB_OWNER` - Organization/owner for GoReleaser builds
+```
+/etc/mjolnir/BUILD_TAG      # e.g., "1.25D-thor-asgard"
+/etc/mjolnir/BUILD_NAME     # e.g., "thor-asgard"
+/etc/mjolnir/GO_VERSION     # e.g., "1.25"
+/etc/mjolnir/BUILD_VERSION  # e.g., "1.6.8"
+```
 
 ## CI/CD Pipeline
 
-### Triggers
-- **Tags (`v*`)**: Build, scan, and push to GHCR with SemVer tags
-- **Pull Requests**: Lint, build, and security scan without pushing
+### Workflow Files
+- `.github/workflows/ci.yml` - Main CI (lint → build → security → release)
+- `.github/workflows/scheduled-build.yml` - Bi-weekly rebuilds
 
-### Jobs
-| Job | Purpose |
-|-----|---------|
-| `lint` | Hadolint Dockerfile best practices |
-| `build` | Build image and verify tools |
-| `security` | Trivy vulnerability scan (CRITICAL, HIGH) |
-| `release` | Push to GHCR (tags only) |
-
-### Security Features
-- **Hadolint** - Dockerfile linting for best practices
-- **Trivy** - CVE vulnerability scanning
-- **SARIF** - Results uploaded to GitHub Security tab
-
-### Release Process
-```bash
-git tag v1.0.0
-git push origin v1.0.0
+### CI Flow
+```
+lint → build-debian ─┬─→ security → release
+    └→ build-alpine ─┘
 ```
 
-### Generated Tags
-When pushing `v1.0.0`, the following image tags are created:
-- `ghcr.io/<owner>/go-toolbox:1.0.0`
-- `ghcr.io/<owner>/go-toolbox:1.0`
-- `ghcr.io/<owner>/go-toolbox:1`
-- `ghcr.io/<owner>/go-toolbox:latest`
+### Triggers
+- **Tags (`v*`)**: Full pipeline with release to GHCR
+- **Pull Requests**: Lint, build, security scan (no push)
+- **Scheduled**: Bi-weekly rebuilds (1st and 15th)
+
+## Example Projects
+
+Located in `examples/` directory:
+
+| Language | Framework | Path |
+|----------|-----------|------|
+| Go | GoReleaser + Cobra | `examples/go/` |
+| Rust | Actix-web | `examples/rust/` |
+| TypeScript | Bun | `examples/typescript/` |
+| Python | FastAPI | `examples/python/` |
+
+## Usage in GitHub Actions
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/inovacc/mjolnir:latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: task build:prod
+```
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `Dockerfile.debian` | Debian-based image |
+| `Dockerfile.alpine` | Alpine-based image |
+| `scripts/taggen.sh` | Local tag generation script |
+| `Taskfile.yml` | Local build tasks |
+
+## Release Process
+
+```bash
+git tag v1.6.9
+git push origin v1.6.9
+```
+
+This triggers the CI workflow which:
+1. Lints Dockerfiles
+2. Builds both Debian and Alpine images
+3. Runs security scan (Trivy)
+4. Pushes to GHCR with version tags
