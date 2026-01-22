@@ -20,8 +20,8 @@ Repository: `ghcr.io/inovacc/mjolnir`
 ## Tagging Scheme
 
 ```
-ghcr.io/inovacc/mjolnir:1.6.9          # Default (Debian)
-ghcr.io/inovacc/mjolnir:1.6.9-alpine   # Alpine variant
+ghcr.io/inovacc/mjolnir:1.7.0          # Default (Debian)
+ghcr.io/inovacc/mjolnir:1.7.0-alpine   # Alpine variant
 ghcr.io/inovacc/mjolnir:latest         # Latest Debian
 ghcr.io/inovacc/mjolnir:latest-alpine  # Latest Alpine
 ```
@@ -102,8 +102,11 @@ Each image generates mythology-themed build metadata at `/etc/mjolnir/`:
 /etc/mjolnir/BUILD_TAG      # e.g., "1.25.6D-thor-asgard"
 /etc/mjolnir/BUILD_NAME     # e.g., "thor-asgard"
 /etc/mjolnir/GO_VERSION     # e.g., "1.25.6"
-/etc/mjolnir/BUILD_VERSION  # e.g., "1.6.9"
+/etc/mjolnir/BUILD_VERSION  # e.g., "1.7.0"
+/etc/mjolnir/TOOLS_TABLE    # Pre-generated ASCII table of all tools
 ```
+
+Running the container displays a formatted tools table (generated at build time for instant startup).
 
 ## CI/CD Pipeline
 
@@ -153,14 +156,15 @@ jobs:
 |------|---------|
 | `Dockerfile.debian` | Debian-based image |
 | `Dockerfile.alpine` | Alpine-based image |
+| `scripts/generate-tools-table.sh` | Generates formatted ASCII tools table |
 | `scripts/taggen.sh` | Local tag generation script |
 | `Taskfile.yml` | Local build tasks |
 
 ## Release Process
 
 ```bash
-git tag v1.6.10
-git push origin v1.6.10
+git tag v1.7.1
+git push origin v1.7.1
 ```
 
 This triggers the CI workflow which:
