@@ -23,7 +23,9 @@ docker pull ghcr.io/inovacc/mjolnir:alpine
 - **Task** - Task runner for build automation
 - **Buf** - Protocol Buffer CLI with Go plugins
 - **SQLC** - Type-safe SQL code generator
-- **Security** - Hadolint linting + Trivy vulnerability scanning
+- **Security Tools** - gitleaks, govulncheck, cosign, syft
+- **Code Quality** - golangci-lint, hadolint, Trivy scanning
+- **Fast Builds** - Pre-built binaries for heavy tools (~6 min build time)
 - **Scheduled Builds** - Automatic bi-weekly rebuilds for security updates
 
 ## Image Flavors
@@ -47,6 +49,18 @@ docker pull ghcr.io/inovacc/mjolnir:alpine
 | protoc-gen-go | latest | Go protobuf generator |
 | protoc-gen-go-grpc | latest | Go gRPC generator |
 | golangci-lint | latest | Go linters aggregator |
+| govulncheck | latest | Go vulnerability scanner |
+| mockgen | latest | Go mock generator |
+| air | latest | Live reload for development |
+| xc | latest | Markdown-based task runner |
+
+### Security & Signing
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| gitleaks | latest | Secret detection in repos |
+| cosign | latest | Container signing (Sigstore) |
+| syft | latest | SBOM generator |
 
 ### Node.js Ecosystem
 
