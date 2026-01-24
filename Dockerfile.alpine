@@ -43,8 +43,8 @@ RUN apk add --no-cache git ca-certificates bash make curl unzip jq yq \
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # goreleaser
-RUN curl -sfL https://goreleaser.com/static/run | BINDIR=/go/bin bash -s -- --version \
- && mv /go/bin/goreleaser /go/bin/goreleaser
+RUN GORELEASER_VERSION=$(curl -sL https://api.github.com/repos/goreleaser/goreleaser/releases/latest | jq -r '.tag_name') \
+ && curl -sSfL "https://github.com/goreleaser/goreleaser/releases/download/${GORELEASER_VERSION}/goreleaser_Linux_x86_64.tar.gz" | tar xz -C /go/bin goreleaser
 
 # golangci-lint
 RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b /go/bin
