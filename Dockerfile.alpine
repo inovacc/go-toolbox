@@ -33,11 +33,11 @@ ENV https_proxy=${HTTPS_PROXY}
 
 WORKDIR /workspace
 
-# Install runtime dependencies
+# Install runtime dependencies (coreutils needed for install scripts)
 ARG DOCKER_VERSION=27.5.1
 # hadolint ignore=DL3018,DL3016,DL4006
 RUN apk add --no-cache git ca-certificates bash make curl unzip jq yq \
-    nodejs npm python3 py3-pip gcc musl-dev
+    nodejs npm python3 py3-pip gcc musl-dev coreutils
 
 # Download pre-built binaries (heavy tools)
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
